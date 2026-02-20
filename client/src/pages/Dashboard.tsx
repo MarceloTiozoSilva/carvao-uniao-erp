@@ -1,0 +1,243 @@
+import { useAuth } from "@/_core/hooks/useAuth";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { trpc } from "@/lib/trpc";
+import { useEffect, useState } from "react";
+import { format, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Loader2 } from "lucide-react";
+
+interface MonthlyData {
+  month: string;
+  sales: number;
+  expenses: number;
+}
+
+interface CategoryData {
+  name: string;
+  value: number;
+}
+
+const COLORS = [
+  "oklch(0.55 0.2 260)",
+  "oklch(0.65 0.15 280)",
+  "oklch(0.45 0.15 240)",
+  "oklch(0.35 0.12 200)",
+  "oklch(0.75 0.1 300)",
+];
+
+export default function Dashboard() {
+  const { user } = useAuth();
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [balance, setBalance] = useState(0);
+
+  const startDate = subMonths(new Date(), 11);
+  const endDate = new Date();
+
+  const { data: salesData } = trpc.sales.list.useQuery({
+    startDate,
+    endDate,
+  });
+
+  const { data: expensesData } = trpc.expenses.list.useQuery({
+    startDate,
+    endDate,
+  });
+
+  const { data: categoriesData } = trpc.categories.list.useQuery();
+
+  useEffect(() => {
+    if (!salesData || !expensesData) return;
+
+    const months: { [key: string]: { sales: number; expenses: number } } = {};
+    
+    for (let i = 11; i >= 0; i--) {
+      const date = subMonths(new Date(), i);
+      const monthKey = format(date, "MMM/yy", { locale: ptBR });
+      months[monthKey] = { sales: 0, expenses: 0 };
+    }
+
+    salesData.forEach((sale: any) => {
+      const monthKey = format(new Date(sale.date), "MMM/yy", { locale: ptBR });
+      if (months[monthKey]) {
+        months[monthKey].sales += sale.total / 100;
+      }
+    });
+
+    expensesData.forEach((expense: any) => {
+      const monthKey = format(new Date(expense.expenses.date), "MMM/yy", { locale: ptBR });
+      if (months[monthKey]) {
+        months[monthKey].expenses += expense.expenses.amount / 100;
+      }
+    });
+
+    setMonthlyData(Object.entries(months).map(([month, data]) => ({
+      month,
+      sales: Math.round(data.sales * 100) / 100,
+      expenses: Math.round(data.expenses * 100) / 100,
+    })));
+
+    const revenue = salesData.reduce((sum: number, sale: any) => sum + sale.total / 100, 0);
+    const expenses = expensesData.reduce((sum: number, expense: any) => sum + expense.expenses.amount / 100, 0);
+    
+    setTotalRevenue(Math.round(revenue * 100) / 100);
+    setTotalExpenses(Math.round(expenses * 100) / 100);
+    setBalance(Math.round((revenue - expenses) * 100) / 100);
+
+    if (categoriesData) {
+      const categoryTotals: { [key: number]: number } = {};
+      
+      expensesData.forEach((expense: any) => {
+        const categoryId = expense.expenses.categoryId;
+        categoryTotals[categoryId] = (categoryTotals[categoryId] || 0) + expense.expenses.amount / 100;
+      });
+
+      const categoryDataFormatted = Object.entries(categoryTotals).map(([categoryId, total]) => {
+        const category = categoriesData.find((c: any) => c.id === parseInt(categoryId));
+        return {
+          name: category?.name || "Sem categoria",
+          value: Math.round(total * 100) / 100,
+        };
+      });
+
+      setCategoryData(categoryDataFormatted);
+    }
+
+    setLoading(false);
+  }, [salesData, expensesData, categoriesData]);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Bem-vindo, {user?.name}! Aqui está um resumo do seu negócio.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-l-4 border-l-primary">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Faturamento Mensal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                R$ {totalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Últimos 12 meses</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-destructive">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Despesas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                R$ {totalExpenses.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Últimos 12 meses</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Atual</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${balance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                R$ {balance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Receita - Despesa</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Vendas vs Despesas</CardTitle>
+              <CardDescription>Comparação mensal dos últimos 12 meses</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="month" stroke="var(--muted-foreground)" />
+                  <YAxis stroke="var(--muted-foreground)" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius)",
+                    }}
+                    labelStyle={{ color: "var(--foreground)" }}
+                  />
+                  <Legend />
+                  <Bar dataKey="sales" fill="var(--chart-1)" name="Vendas" />
+                  <Bar dataKey="expenses" fill="var(--chart-3)" name="Despesas" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Despesas por Categoria</CardTitle>
+              <CardDescription>Distribuição dos gastos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {categoryData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: R$ ${value.toFixed(2)}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--card)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius)",
+                      }}
+                      labelStyle={{ color: "var(--foreground)" }}
+                      formatter={(value: any) => `R$ ${value.toFixed(2)}`}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  Nenhuma despesa registrada
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}

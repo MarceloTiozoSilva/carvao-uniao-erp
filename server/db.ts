@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, sales, InsertSale, expenses, InsertExpense, expenseCategories } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,81 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function getSalesByUserId(userId: number, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions: any[] = [eq(sales.userId, userId)];
+  
+  if (startDate && endDate) {
+    conditions.push(sql`${sales.date} >= ${startDate}`);
+    conditions.push(sql`${sales.date} <= ${endDate}`);
+  }
+  
+  return db.select().from(sales).where(and(...conditions)).orderBy(sql`${sales.date} DESC`);
+}
+
+export async function getExpensesByUserId(userId: number, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions: any[] = [eq(expenses.userId, userId)];
+  
+  if (startDate && endDate) {
+    conditions.push(sql`${expenses.date} >= ${startDate}`);
+    conditions.push(sql`${expenses.date} <= ${endDate}`);
+  }
+  
+  return db
+    .select()
+    .from(expenses)
+    .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+    .where(and(...conditions))
+    .orderBy(sql`${expenses.date} DESC`);
+}
+
+export async function getExpenseCategories() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(expenseCategories);
+}
+
+export async function createSale(sale: InsertSale) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(sales).values(sale);
+  return result;
+}
+
+export async function createExpense(expense: InsertExpense) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(expenses).values(expense);
+  return result;
+}
+
+export async function updateSale(id: number, updates: Partial<InsertSale>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(sales).set(updates).where(eq(sales.id, id));
+}
+
+export async function updateExpense(id: number, updates: Partial<InsertExpense>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(expenses).set(updates).where(eq(expenses.id, id));
+}
+
+export async function deleteSale(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const { sales: salesTable } = await import("../drizzle/schema");
+  return db.delete(salesTable).where(eq(salesTable.id, id));
+}
+
+export async function deleteExpense(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const { expenses: expensesTable } = await import("../drizzle/schema");
+  return db.delete(expensesTable).where(eq(expensesTable.id, id));
+}

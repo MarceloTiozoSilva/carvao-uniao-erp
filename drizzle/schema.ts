@@ -25,4 +25,46 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+export const expenseCategories = mysqlTable("expense_categories", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  type: mysqlEnum("type", ["fixed", "variable", "fleet_maintenance", "employee"]).notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ExpenseCategory = typeof expenseCategories.$inferSelect;
+export type InsertExpenseCategory = typeof expenseCategories.$inferInsert;
+
+export const sales = mysqlTable("sales", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  date: timestamp("date").notNull(),
+  client: varchar("client", { length: 255 }).notNull(),
+  product: varchar("product", { length: 255 }).notNull(),
+  quantity: int("quantity").notNull(),
+  unitPrice: int("unitPrice").notNull(), // Store in cents to avoid floating point issues
+  total: int("total").notNull(), // quantity * unitPrice
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Sale = typeof sales.$inferSelect;
+export type InsertSale = typeof sales.$inferInsert;
+
+export const expenses = mysqlTable("expenses", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  date: timestamp("date").notNull(),
+  description: varchar("description", { length: 255 }).notNull(),
+  categoryId: int("categoryId").notNull().references(() => expenseCategories.id),
+  amount: int("amount").notNull(), // Store in cents
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Expense = typeof expenses.$inferSelect;
+export type InsertExpense = typeof expenses.$inferInsert;
