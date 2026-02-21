@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Plus, Trash2, Edit2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Sales() {
@@ -24,6 +24,7 @@ export default function Sales() {
 
   const utils = trpc.useUtils();
   const { data: sales, isLoading } = trpc.sales.list.useQuery({});
+  
   const createMutation = trpc.sales.create.useMutation({
     onSuccess: () => {
       toast.success("Venda registrada com sucesso!");
@@ -75,7 +76,7 @@ export default function Sales() {
     }
   };
 
-  const total = formData.quantity * formData.unitPrice;
+  const total = useMemo(() => formData.quantity * formData.unitPrice, [formData.quantity, formData.unitPrice]);
 
   return (
     <DashboardLayout>

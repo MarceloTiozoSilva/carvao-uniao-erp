@@ -1,9 +1,9 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { trpc } from "@/lib/trpc";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Loader2 } from "lucide-react";
@@ -31,91 +31,103 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [balance, setBalance] = useState(0);
 
-  const startDate = subMonths(new Date(), 11);
-  const endDate = new Date();
+  const startDate = useMemo(() => subMonths(new Date(), 11), []);
+  const endDate = useMemo(() => new Date(), []);
 
-  const { data: salesData } = trpc.sales.list.useQuery({
+  const { data: salesData, isLoading: salesLoading } = trpc.sales.list.useQuery({
     startDate,
     endDate,
   });
 
-  const { data: expensesData } = trpc.expenses.list.useQuery({
+  const { data: expensesData, isLoading: expensesLoading } = trpc.expenses.list.useQuery({
     startDate,
     endDate,
   });
 
-  const { data: categoriesData } = trpc.categories.list.useQuery();
+  const { data: categoriesData, isLoading: categoriesLoading } = trpc.categories.list.useQuery();
 
   useEffect(() => {
-    if (!salesData || !expensesData) return;
-
-    const months: { [key: string]: { sales: number; expenses: number } } = {};
-    
-    for (let i = 11; i >= 0; i--) {
-      const date = subMonths(new Date(), i);
-      const monthKey = format(date, "MMM/yy", { locale: ptBR });
-      months[monthKey] = { sales: 0, expenses: 0 };
+    if (salesLoading || expensesLoading || categoriesLoading) {
+      return;
     }
 
-    salesData.forEach((sale: any) => {
-      const monthKey = format(new Date(sale.date), "MMM/yy", { locale: ptBR });
-      if (months[monthKey]) {
-        months[monthKey].sales += sale.total / 100;
-      }
-    });
+    if (!salesData || !expensesData) {
+      return;
+    }
 
-    expensesData.forEach((expense: any) => {
-      const monthKey = format(new Date(expense.expenses.date), "MMM/yy", { locale: ptBR });
-      if (months[monthKey]) {
-        months[monthKey].expenses += expense.expenses.amount / 100;
-      }
-    });
-
-    setMonthlyData(Object.entries(months).map(([month, data]) => ({
-      month,
-      sales: Math.round(data.sales * 100) / 100,
-      expenses: Math.round(data.expenses * 100) / 100,
-    })));
-
-    const revenue = salesData.reduce((sum: number, sale: any) => sum + sale.total / 100, 0);
-    const expenses = expensesData.reduce((sum: number, expense: any) => sum + expense.expenses.amount / 100, 0);
-    
-    setTotalRevenue(Math.round(revenue * 100) / 100);
-    setTotalExpenses(Math.round(expenses * 100) / 100);
-    setBalance(Math.round((revenue - expenses) * 100) / 100);
-
-    if (categoriesData) {
-      const categoryTotals: { [key: number]: number } = {};
+    try {
+      const months: { [key: string]: { sales: number; expenses: number } } = {};
       
+      for (let i = 11; i >= 0; i--) {
+        const date = subMonths(new Date(), i);
+        const monthKey = format(date, "MMM/yy", { locale: ptBR });
+        months[monthKey] = { sales: 0, expenses: 0 };
+      }
+
+      salesData.forEach((sale: any) => {
+        const monthKey = format(new Date(sale.date), "MMM/yy", { locale: ptBR });
+        if (months[monthKey]) {
+          months[monthKey].sales += sale.total / 100;
+        }
+      });
+
       expensesData.forEach((expense: any) => {
-        const categoryId = expense.expenses.categoryId;
-        categoryTotals[categoryId] = (categoryTotals[categoryId] || 0) + expense.expenses.amount / 100;
+        const monthKey = format(new Date(expense.expenses.date), "MMM/yy", { locale: ptBR });
+        if (months[monthKey]) {
+          months[monthKey].expenses += expense.expenses.amount / 100;
+        }
       });
 
-      const categoryDataFormatted = Object.entries(categoryTotals).map(([categoryId, total]) => {
-        const category = categoriesData.find((c: any) => c.id === parseInt(categoryId));
-        return {
-          name: category?.name || "Sem categoria",
-          value: Math.round(total * 100) / 100,
-        };
-      });
+      setMonthlyData(Object.entries(months).map(([month, data]) => ({
+        month,
+        sales: Math.round(data.sales * 100) / 100,
+        expenses: Math.round(data.expenses * 100) / 100,
+      })));
 
-      setCategoryData(categoryDataFormatted);
+      const revenue = salesData.reduce((sum: number, sale: any) => sum + sale.total / 100, 0);
+      const expenses = expensesData.reduce((sum: number, expense: any) => sum + expense.expenses.amount / 100, 0);
+      
+      setTotalRevenue(Math.round(revenue * 100) / 100);
+      setTotalExpenses(Math.round(expenses * 100) / 100);
+      setBalance(Math.round((revenue - expenses) * 100) / 100);
+
+      if (categoriesData && categoriesData.length > 0) {
+        const categoryTotals: { [key: number]: number } = {};
+        
+        expensesData.forEach((expense: any) => {
+          const categoryId = expense.expenses.categoryId;
+          categoryTotals[categoryId] = (categoryTotals[categoryId] || 0) + expense.expenses.amount / 100;
+        });
+
+        const categoryDataFormatted = Object.entries(categoryTotals).map(([categoryId, total]) => {
+          const category = categoriesData.find((c: any) => c.id === parseInt(categoryId));
+          return {
+            name: category?.name || "Sem categoria",
+            value: Math.round(total * 100) / 100,
+          };
+        });
+
+        setCategoryData(categoryDataFormatted);
+      }
+    } catch (error) {
+      console.error("Erro ao processar dados do dashboard:", error);
     }
+  }, [salesData, expensesData, categoriesData, salesLoading, expensesLoading, categoriesLoading]);
 
-    setLoading(false);
-  }, [salesData, expensesData, categoriesData]);
+  const isLoading = salesLoading || expensesLoading || categoriesLoading;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-screen">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Carregando dashboard...</p>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -174,24 +186,30 @@ export default function Dashboard() {
               <CardDescription>Comparação mensal dos últimos 12 meses</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="month" stroke="var(--muted-foreground)" />
-                  <YAxis stroke="var(--muted-foreground)" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius)",
-                    }}
-                    labelStyle={{ color: "var(--foreground)" }}
-                  />
-                  <Legend />
-                  <Bar dataKey="sales" fill="var(--chart-1)" name="Vendas" />
-                  <Bar dataKey="expenses" fill="var(--chart-3)" name="Despesas" />
-                </BarChart>
-              </ResponsiveContainer>
+              {monthlyData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="month" stroke="var(--muted-foreground)" />
+                    <YAxis stroke="var(--muted-foreground)" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--card)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius)",
+                      }}
+                      labelStyle={{ color: "var(--foreground)" }}
+                    />
+                    <Legend />
+                    <Bar dataKey="sales" fill="var(--chart-1)" name="Vendas" />
+                    <Bar dataKey="expenses" fill="var(--chart-3)" name="Despesas" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  Nenhum dado disponível
+                </div>
+              )}
             </CardContent>
           </Card>
 

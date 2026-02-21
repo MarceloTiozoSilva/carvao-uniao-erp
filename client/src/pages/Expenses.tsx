@@ -23,8 +23,8 @@ export default function Expenses() {
   });
 
   const utils = trpc.useUtils();
-  const { data: expenses, isLoading } = trpc.expenses.list.useQuery({});
-  const { data: categories } = trpc.categories.list.useQuery();
+  const { data: expenses, isLoading: expensesLoading } = trpc.expenses.list.useQuery({});
+  const { data: categories, isLoading: categoriesLoading } = trpc.categories.list.useQuery();
 
   const createMutation = trpc.expenses.create.useMutation({
     onSuccess: () => {
@@ -174,7 +174,7 @@ export default function Expenses() {
             <CardDescription>Todas as despesas registradas</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {expensesLoading || categoriesLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
