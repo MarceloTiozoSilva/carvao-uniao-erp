@@ -12,6 +12,12 @@ import { trpc } from "@/lib/trpc";
 import { format, subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, startOfQuarter, endOfQuarter } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Loader2, Download } from "lucide-react";
+import { toast } from "sonner";
+
+interface PDFGenerationState {
+  cashFlow: boolean;
+  dre: boolean;
+}
 
 const COLORS = [
   "oklch(0.55 0.2 260)",
@@ -25,6 +31,50 @@ export default function Reports() {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [filterPeriod, setFilterPeriod] = useState("month");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [pdfLoading, setPdfLoading] = useState<PDFGenerationState>({ cashFlow: false, dre: false });
+
+  const cashFlowPdfMutation = trpc.reports.generateCashFlowPDF.useMutation();
+  const drePdfMutation = trpc.reports.generateDREPDF.useMutation();
+
+  const handleDownloadCashFlowPDF = async () => {
+    setPdfLoading({ ...pdfLoading, cashFlow: true });
+    try {
+      const pdfBase64 = await cashFlowPdfMutation.mutateAsync({
+        startDate,
+        endDate,
+        period: format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR }),
+      });
+      const link = document.createElement("a");
+      link.href = `data:application/pdf;base64,${pdfBase64}`;
+      link.download = `fluxo-caixa-${format(selectedMonth, "yyyy-MM-dd")}.pdf`;
+      link.click();
+      toast.success("PDF de fluxo de caixa baixado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao gerar PDF de fluxo de caixa");
+    } finally {
+      setPdfLoading({ ...pdfLoading, cashFlow: false });
+    }
+  };
+
+  const handleDownloadDREPDF = async () => {
+    setPdfLoading({ ...pdfLoading, dre: true });
+    try {
+      const pdfBase64 = await drePdfMutation.mutateAsync({
+        startDate,
+        endDate,
+        period: format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR }),
+      });
+      const link = document.createElement("a");
+      link.href = `data:application/pdf;base64,${pdfBase64}`;
+      link.download = `dre-${format(selectedMonth, "yyyy-MM-dd")}.pdf`;
+      link.click();
+      toast.success("PDF de DRE baixado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao gerar PDF de DRE");
+    } finally {
+      setPdfLoading({ ...pdfLoading, dre: false });
+    }
+  };
 
   const getDateRange = () => {
     const now = new Date();
@@ -130,10 +180,7 @@ export default function Reports() {
   const expensesByCategory = getExpensesByCategory();
   const cashFlow = getCashFlow();
 
-  const handleDownloadPDF = () => {
-    // TODO: Implementar exportação em PDF
-    alert("Funcionalidade de download em PDF será implementada em breve!");
-  };
+
 
   return (
     <DashboardLayout>
@@ -392,11 +439,35 @@ export default function Reports() {
           </TabsContent>
         </Tabs>
 
-        {/* Botão de Download */}
-        <Button onClick={handleDownloadPDF} className="gap-2" disabled>
-          <Download className="h-4 w-4" />
-          Exportar em PDF (Em desenvolvimento)
-        </Button>
+        {/* Botões de Download de PDF */}
+        <div className="flex gap-4">
+          <Button onClick={handleDownloadCashFlowPDF} className="gap-2" disabled={pdfLoading.cashFlow}>
+            {pdfLoading.cashFlow ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Gerando...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Baixar Fluxo de Caixa (PDF)
+              </>
+            )}
+          </Button>
+          <Button onClick={handleDownloadDREPDF} className="gap-2" disabled={pdfLoading.dre}>
+            {pdfLoading.dre ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Gerando...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Baixar DRE (PDF)
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </DashboardLayout>
   );

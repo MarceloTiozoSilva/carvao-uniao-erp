@@ -6,40 +6,50 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Sales() {
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
-    client: "",
-    product: "",
+    clientId: "",
+    productId: "",
     quantity: 1,
     unitPrice: 0,
   });
 
   const utils = trpc.useUtils();
-  const { data: sales, isLoading } = trpc.sales.list.useQuery({});
+  const { data: sales, isLoading } = trpc.sales.list.useQuery({} as any);
+  const { data: clients } = trpc.clients.list.useQuery(undefined as any);
+  const { data: products } = trpc.products.list.useQuery(undefined as any);
   
   const createMutation = trpc.sales.create.useMutation({
     onSuccess: () => {
       toast.success("Venda registrada com sucesso!");
-      setFormData({
-        date: new Date().toISOString().split("T")[0],
-        client: "",
-        product: "",
-        quantity: 1,
-        unitPrice: 0,
-      });
+      resetForm();
       setOpen(false);
-      utils.sales.list.invalidate();
+      utils.sales.list.invalidate({});
     },
     onError: (error) => {
       toast.error("Erro ao registrar venda: " + error.message);
+    },
+  });
+
+  const updateMutation = trpc.sales.update.useMutation({
+    onSuccess: () => {
+      toast.success("Venda atualizada com sucesso!");
+      resetForm();
+      setOpen(false);
+      utils.sales.list.invalidate({});
+    },
+    onError: (error) => {
+      toast.error("Erro ao atualizar venda: " + error.message);
     },
   });
 
@@ -53,21 +63,60 @@ export default function Sales() {
     },
   });
 
+  const resetForm = () => {
+    setFormData({
+      date: new Date().toISOString().split("T")[0],
+      clientId: "",
+      productId: "",
+      quantity: 1,
+      unitPrice: 0,
+    });
+    setEditingId(null);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.client || !formData.product || formData.quantity <= 0 || formData.unitPrice <= 0) {
+    if (!formData.clientId || !formData.productId || formData.quantity <= 0 || formData.unitPrice <= 0) {
       toast.error("Preencha todos os campos corretamente");
       return;
     }
 
-    createMutation.mutate({
-      date: new Date(formData.date),
-      client: formData.client,
-      product: formData.product,
-      quantity: formData.quantity,
-      unitPrice: formData.unitPrice,
+    const selectedClient = clients?.find((c: any) => c.id === parseInt(formData.clientId));
+    const selectedProduct = products?.find((p: any) => p.id === parseInt(formData.productId));
+
+    if (editingId) {
+      updateMutation.mutate({
+        id: editingId,
+        client: selectedClient?.name || "",
+        product: selectedProduct?.name || "",
+        quantity: formData.quantity,
+        unitPrice: formData.unitPrice,
+      });
+    } else {
+      createMutation.mutate({
+        date: new Date(formData.date),
+        client: selectedClient?.name || "",
+        product: selectedProduct?.name || "",
+        quantity: formData.quantity,
+        unitPrice: formData.unitPrice,
+      });
+    }
+  };
+
+  const handleEdit = (sale: any) => {
+    const client = clients?.find((c: any) => c.name === sale.client);
+    const product = products?.find((p: any) => p.name === sale.product);
+    
+    setFormData({
+      date: format(new Date(sale.date), "yyyy-MM-dd"),
+      clientId: client?.id.toString() || "",
+      productId: product?.id.toString() || "",
+      quantity: sale.quantity,
+      unitPrice: sale.unitPrice / 100,
     });
+    setEditingId(sale.id);
+    setOpen(true);
   };
 
   const handleDelete = (id: number) => {
@@ -86,7 +135,10 @@ export default function Sales() {
             <h1 className="text-3xl font-bold text-foreground">Lançamento de Vendas</h1>
             <p className="text-muted-foreground mt-1">Registre as vendas de carvão ensacado</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(newOpen) => {
+            setOpen(newOpen);
+            if (!newOpen) resetForm();
+          }}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
@@ -95,7 +147,7 @@ export default function Sales() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Registrar Nova Venda</DialogTitle>
+                <DialogTitle>{editingId ? "Editar Venda" : "Registrar Nova Venda"}</DialogTitle>
                 <DialogDescription>Preencha os dados da venda abaixo</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -111,23 +163,42 @@ export default function Sales() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="client">Cliente</Label>
-                    <Input
-                      id="client"
-                      placeholder="Nome do cliente"
-                      value={formData.client}
-                      onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-                    />
+                    <Select value={formData.clientId} onValueChange={(value) => setFormData({ ...formData, clientId: value })}>
+                      <SelectTrigger id="client">
+                        <SelectValue placeholder="Selecione um cliente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clients?.map((client: any) => (
+                          <SelectItem key={client.id} value={client.id.toString()}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="product">Produto</Label>
-                  <Input
-                    id="product"
-                    placeholder="Ex: Carvão Premium 50kg"
-                    value={formData.product}
-                    onChange={(e) => setFormData({ ...formData, product: e.target.value })}
-                  />
+                  <Select value={formData.productId} onValueChange={(value) => {
+                    const selectedProduct = products?.find((p: any) => p.id === parseInt(value));
+                    setFormData({ 
+                      ...formData, 
+                      productId: value,
+                      unitPrice: selectedProduct ? selectedProduct.price / 100 : formData.unitPrice
+                    });
+                  }}>
+                    <SelectTrigger id="product">
+                      <SelectValue placeholder="Selecione um produto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products?.map((product: any) => (
+                        <SelectItem key={product.id} value={product.id.toString()}>
+                          {product.name} - R$ {(product.price / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -161,14 +232,14 @@ export default function Sales() {
                   </p>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? (
+                <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {createMutation.isPending || updateMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Registrando...
+                      {editingId ? "Atualizando..." : "Registrando..."}
                     </>
                   ) : (
-                    "Registrar Venda"
+                    editingId ? "Atualizar Venda" : "Registrar Venda"
                   )}
                 </Button>
               </form>
@@ -213,7 +284,14 @@ export default function Sales() {
                         <TableCell className="text-right font-semibold">
                           R$ {(sale.total / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(sale)}
+                          >
+                            <Edit2 className="w-4 h-4 text-blue-500" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

@@ -85,3 +85,8 @@
 - [x] Testes de edição de despesas e vendas
 - [x] Testes de validação de dados
 - [x] Testes de geração de PDFs
+
+## Ajustes Solicitados
+- [ ] Vincular clientes e produtos ao formulário de vendas
+- [ ] Corrigir proporção e labels do gráfico em pizza (Despesas por Categoria)
+- [ ] Implementar interface de download de relatórios em PDF

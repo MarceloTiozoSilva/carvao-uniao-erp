@@ -221,14 +221,14 @@ export default function Dashboard() {
             <CardContent>
               {categoryData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
+                  <PieChart margin={{ top: 0, right: 100, bottom: 0, left: 0 }}>
                     <Pie
                       data={categoryData}
-                      cx="50%"
+                      cx="40%"
                       cy="50%"
-                      labelLine={false}
+                      labelLine={true}
                       label={({ name, value }) => `${name}: R$ ${value.toFixed(2)}`}
-                      outerRadius={80}
+                      outerRadius={70}
                       fill="#8884d8"
                       dataKey="value"
                     >
