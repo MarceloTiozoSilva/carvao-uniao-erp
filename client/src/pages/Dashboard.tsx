@@ -220,17 +220,18 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {categoryData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart margin={{ top: 0, right: 100, bottom: 0, left: 0 }}>
+                <ResponsiveContainer width="100%" height={350}>
+                  <PieChart margin={{ top: 20, right: 200, bottom: 20, left: 20 }}>
                     <Pie
                       data={categoryData}
-                      cx="40%"
+                      cx="30%"
                       cy="50%"
                       labelLine={true}
-                      label={({ name, value }) => `${name}: R$ ${value.toFixed(2)}`}
-                      outerRadius={70}
+                      label={({ name, value }) => `${name}: R$ ${(value / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                      outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
+                      isAnimationActive={true}
                     >
                       {categoryData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
