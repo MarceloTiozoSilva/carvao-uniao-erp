@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingCart, CreditCard, BarChart3, Users2, Package, Truck, Box, FileText } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingCart, CreditCard, BarChart3, Users2, Package, Truck, Box, FileText, Flame } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -177,9 +177,15 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate text-primary">
-                    Carvão União
-                  </span>
+                  <Flame className="h-5 w-5 text-primary shrink-0" />
+                  <div className="flex items-baseline gap-1 min-w-0">
+                    <span className="font-bold tracking-tight truncate" style={{ color: '#C8A96E' }}>
+                      CARVÃO
+                    </span>
+                    <span className="font-bold tracking-tight truncate text-primary">
+                      UNIÃO
+                    </span>
+                  </div>
                 </div>
               ) : null}
             </div>

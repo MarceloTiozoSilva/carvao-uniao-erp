@@ -197,7 +197,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-green-500">
+          <Card className="border-l-4" style={{ borderLeftColor: '#C8A96E' }}>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Atual</CardTitle>
             </CardHeader>
@@ -223,24 +223,24 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-yellow-500">
+          <Card className="border-l-4" style={{ borderLeftColor: '#C8A96E' }}>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Vencimento Próximo</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
+              <div className="text-2xl font-bold" style={{ color: '#C8A96E' }}>
                 {upcomingAccounts}
               </div>
               <p className="text-xs text-muted-foreground mt-1">Próximos 7 dias</p>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-blue-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Estoque Total</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-primary">
                 {totalStock.toFixed(2)} ton
               </div>
               <p className="text-xs text-muted-foreground mt-1">Toneladas em estoque</p>
