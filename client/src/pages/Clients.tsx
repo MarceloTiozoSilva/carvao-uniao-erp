@@ -1,24 +1,16 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
-import { Plus, Trash2, Edit2 } from "lucide-react";
+import { Plus, Edit2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function Clients() {
-  const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -35,7 +27,6 @@ export default function Clients() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       if (editingId) {
         await updateMutation.mutateAsync({
@@ -47,10 +38,9 @@ export default function Clients() {
         await createMutation.mutateAsync(formData);
         toast.success("Cliente criado com sucesso!");
       }
-
       setFormData({ name: "", email: "", phone: "", address: "", notes: "" });
       setEditingId(null);
-      setOpen(false);
+      setIsOpen(false);
       refetch();
     } catch (error) {
       toast.error("Erro ao salvar cliente");
@@ -66,7 +56,7 @@ export default function Clients() {
       notes: client.notes || "",
     });
     setEditingId(client.id);
-    setOpen(true);
+    setIsOpen(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -81,147 +71,127 @@ export default function Clients() {
     }
   };
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      setFormData({ name: "", email: "", phone: "", address: "", notes: "" });
-      setEditingId(null);
-    }
-    setOpen(newOpen);
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Clientes</h1>
-          <p className="text-muted-foreground mt-1">Gerencie os clientes da sua empresa</p>
-        </div>
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Cliente
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingId ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nome *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Nome do cliente"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-              <div>
-                <Label htmlFor="address">Endereço</Label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Endereço completo"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Notas adicionais"
-                  rows={2}
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                {editingId ? "Atualizar" : "Criar"} Cliente
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
+            <p className="text-muted-foreground mt-2">Gerencie seus clientes</p>
+          </div>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => { setEditingId(null); setFormData({ name: "", email: "", phone: "", address: "", notes: "" }); }}>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Cliente
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid gap-4">
-        {clients && clients.length > 0 ? (
-          clients.map((client: any) => (
-            <Card key={client.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{client.name}</CardTitle>
-                    {client.email && (
-                      <p className="text-sm text-muted-foreground mt-1">{client.email}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(client)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(client.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingId ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Nome *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                {client.phone && (
-                  <p>
-                    <span className="font-medium">Telefone:</span> {client.phone}
-                  </p>
-                )}
-                {client.address && (
-                  <p>
-                    <span className="font-medium">Endereço:</span> {client.address}
-                  </p>
-                )}
-                {client.notes && (
-                  <p>
-                    <span className="font-medium">Observações:</span> {client.notes}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <CardContent className="pt-6 text-center text-muted-foreground">
-              Nenhum cliente cadastrado. Clique em "Novo Cliente" para começar.
-            </CardContent>
-          </Card>
-        )}
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="address">Endereço</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="notes">Observações</Label>
+                  <Input
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  {editingId ? "Atualizar" : "Criar"} Cliente
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Clientes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {clients.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">Nenhum cliente cadastrado</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="border-b">
+                    <tr>
+                      <th className="text-left py-3 px-4 font-medium">Nome</th>
+                      <th className="text-left py-3 px-4 font-medium">Email</th>
+                      <th className="text-left py-3 px-4 font-medium">Telefone</th>
+                      <th className="text-left py-3 px-4 font-medium">Endereço</th>
+                      <th className="text-left py-3 px-4 font-medium">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clients.map((client: any) => (
+                      <tr key={client.id} className="border-b hover:bg-accent/50">
+                        <td className="py-3 px-4">{client.name}</td>
+                        <td className="py-3 px-4">{client.email || "-"}</td>
+                        <td className="py-3 px-4">{client.phone || "-"}</td>
+                        <td className="py-3 px-4">{client.address || "-"}</td>
+                        <td className="py-3 px-4 flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(client)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(client.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
