@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, sales, InsertSale, expenses, InsertExpense, expenseCategories, clients, InsertClient, products, InsertProduct } from "../drizzle/schema";
+import { InsertUser, users, sales, InsertSale, expenses, InsertExpense, expenseCategories, clients, InsertClient, products, InsertProduct, suppliers, InsertSupplier, stockMovements, InsertStockMovement, accounts, InsertAccount } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -227,4 +227,80 @@ export async function deleteProduct(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.delete(products).where(eq(products.id, id));
+}
+
+
+// Suppliers
+export async function getSuppliersByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(suppliers).where(eq(suppliers.userId, userId)).orderBy(sql`${suppliers.name} ASC`);
+}
+
+export async function createSupplier(supplier: InsertSupplier) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(suppliers).values(supplier);
+}
+
+export async function updateSupplier(id: number, updates: Partial<InsertSupplier>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(suppliers).set(updates).where(eq(suppliers.id, id));
+}
+
+export async function deleteSupplier(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(suppliers).where(eq(suppliers.id, id));
+}
+
+// Stock Movements
+export async function getStockMovementsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(stockMovements).where(eq(stockMovements.userId, userId)).orderBy(sql`${stockMovements.date} DESC`);
+}
+
+export async function createStockMovement(movement: InsertStockMovement) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(stockMovements).values(movement);
+}
+
+export async function updateStockMovement(id: number, updates: Partial<InsertStockMovement>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(stockMovements).set(updates).where(eq(stockMovements.id, id));
+}
+
+export async function deleteStockMovement(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(stockMovements).where(eq(stockMovements.id, id));
+}
+
+// Accounts (Contas a Pagar/Receber)
+export async function getAccountsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(accounts).where(eq(accounts.userId, userId)).orderBy(sql`${accounts.dueDate} ASC`);
+}
+
+export async function createAccount(account: InsertAccount) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(accounts).values(account);
+}
+
+export async function updateAccount(id: number, updates: Partial<InsertAccount>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(accounts).set(updates).where(eq(accounts.id, id));
+}
+
+export async function deleteAccount(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(accounts).where(eq(accounts.id, id));
 }

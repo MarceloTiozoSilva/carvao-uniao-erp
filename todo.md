@@ -90,3 +90,48 @@
 - [ ] Vincular clientes e produtos ao formulário de vendas
 - [ ] Corrigir proporção e labels do gráfico em pizza (Despesas por Categoria)
 - [ ] Implementar interface de download de relatórios em PDF
+
+
+## Melhorias Solicitadas - Fase 2
+
+### Visual e Tema Escuro
+- [ ] Migrar para tema escuro profissional
+- [ ] Sidebar: fundo preto/cinza carvão (#1a1a2e), texto branco
+- [ ] Fundo geral: cinza escuro (#0f0f1a)
+- [ ] Cards KPI: fundo escuro com borda azul elétrico (#1e90ff)
+- [ ] Botões: azul elétrico com hover
+- [ ] Adaptar gráficos para tema escuro
+- [ ] Textos: branco e cinza claro para hierarquia
+
+### Menu Lateral - Hierarquia
+- [ ] Grupo 1: Dashboard, Vendas, Despesas, Relatórios
+- [ ] Grupo 2 "Cadastros": Clientes, Produtos, Fornecedores
+- [ ] Adicionar divisória sutil entre grupos
+
+### Módulo de Estoque
+- [ ] Criar tabela de estoque no banco
+- [ ] Cadastro de movimentações (entrada/saída)
+- [ ] Campos: data, tipo, produto, quantidade (toneladas), valor unitário, fornecedor, observação
+- [ ] Listagem com filtro por período e produto
+- [ ] Card de saldo atual por produto
+- [ ] Vincular ao módulo de Fornecedores
+
+### Módulo de Contas a Pagar/Receber
+- [ ] Criar tabela de contas no banco
+- [ ] Cadastro de compromissos futuros
+- [ ] Campos: descrição, tipo (pagar/receber), valor, vencimento, status, categoria, cliente/fornecedor
+- [ ] Listagem com filtro por tipo, status, período
+- [ ] Indicador visual de contas vencidas (vermelho)
+- [ ] Dashboard: card com contas vencidas e a vencer (7 dias)
+
+### Módulo de Fornecedores
+- [ ] Criar tabela de fornecedores no banco
+- [ ] Cadastro com: nome, CNPJ/CPF, telefone, email, produto, observações
+- [ ] Listagem com busca por nome
+- [ ] Vincular em Despesas e Estoque
+- [ ] Adicionar ao menu "Cadastros"
+
+### Dashboard - Atualizações
+- [ ] Card de contas vencidas e a vencer
+- [ ] Indicadores visuais de alertas
+- [ ] Integração com novos módulos

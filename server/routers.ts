@@ -21,6 +21,18 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  getSuppliersByUserId,
+  createSupplier,
+  updateSupplier,
+  deleteSupplier,
+  getStockMovementsByUserId,
+  createStockMovement,
+  updateStockMovement,
+  deleteStockMovement,
+  getAccountsByUserId,
+  createAccount,
+  updateAccount,
+  deleteAccount,
 } from "./db";
 import { generateCashFlowPDF, generateDREPDF } from "./pdf";
 
@@ -363,6 +375,196 @@ export const appRouter = router({
 
         const pdf = await generateDREPDF(totalSales, totalExpenses, balance, expensesByCategory, input.period);
         return pdf.toString("base64");
+      }),
+  }),
+
+  suppliers: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getSuppliersByUserId(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().min(1),
+          cnpjCpf: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().email().optional(),
+          product: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return createSupplier({
+          userId: ctx.user.id,
+          name: input.name,
+          cnpjCpf: input.cnpjCpf,
+          phone: input.phone,
+          email: input.email,
+          product: input.product,
+          notes: input.notes,
+        });
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).optional(),
+          cnpjCpf: z.string().optional(),
+          phone: z.string().optional(),
+          email: z.string().email().optional(),
+          product: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const updates: any = {};
+        if (input.name) updates.name = input.name;
+        if (input.cnpjCpf) updates.cnpjCpf = input.cnpjCpf;
+        if (input.phone) updates.phone = input.phone;
+        if (input.email) updates.email = input.email;
+        if (input.product) updates.product = input.product;
+        if (input.notes !== undefined) updates.notes = input.notes;
+        return updateSupplier(input.id, updates);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return deleteSupplier(input.id);
+      }),
+  }),
+
+  stockMovements: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getStockMovementsByUserId(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          date: z.date(),
+          type: z.enum(["entrada", "saida"]),
+          productId: z.number(),
+          quantityTonnes: z.number().positive(),
+          unitPrice: z.number().positive(),
+          supplierId: z.number().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return createStockMovement({
+          userId: ctx.user.id,
+          date: input.date,
+          type: input.type,
+          productId: input.productId,
+          quantityTonnes: input.quantityTonnes.toString(),
+          unitPrice: Math.round(input.unitPrice * 100),
+          supplierId: input.supplierId,
+          notes: input.notes,
+        });
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          date: z.date().optional(),
+          type: z.enum(["entrada", "saida"]).optional(),
+          productId: z.number().optional(),
+          quantityTonnes: z.number().positive().optional(),
+          unitPrice: z.number().positive().optional(),
+          supplierId: z.number().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const updates: any = {};
+        if (input.date) updates.date = input.date;
+        if (input.type) updates.type = input.type;
+        if (input.productId) updates.productId = input.productId;
+        if (input.quantityTonnes) updates.quantityTonnes = input.quantityTonnes.toString();
+        if (input.unitPrice) updates.unitPrice = Math.round(input.unitPrice * 100);
+        if (input.supplierId) updates.supplierId = input.supplierId;
+        if (input.notes !== undefined) updates.notes = input.notes;
+        return updateStockMovement(input.id, updates);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return deleteStockMovement(input.id);
+      }),
+  }),
+
+  accounts: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getAccountsByUserId(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          description: z.string().min(1),
+          type: z.enum(["pagar", "receber"]),
+          amount: z.number().positive(),
+          dueDate: z.date(),
+          status: z.enum(["pendente", "pago", "vencido"]).optional(),
+          categoryId: z.number().optional(),
+          clientId: z.number().optional(),
+          supplierId: z.number().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return createAccount({
+          userId: ctx.user.id,
+          description: input.description,
+          type: input.type,
+          amount: Math.round(input.amount * 100),
+          dueDate: input.dueDate,
+          status: input.status || "pendente",
+          categoryId: input.categoryId,
+          clientId: input.clientId,
+          supplierId: input.supplierId,
+          notes: input.notes,
+        });
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          description: z.string().min(1).optional(),
+          type: z.enum(["pagar", "receber"]).optional(),
+          amount: z.number().positive().optional(),
+          dueDate: z.date().optional(),
+          status: z.enum(["pendente", "pago", "vencido"]).optional(),
+          categoryId: z.number().optional(),
+          clientId: z.number().optional(),
+          supplierId: z.number().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const updates: any = {};
+        if (input.description) updates.description = input.description;
+        if (input.type) updates.type = input.type;
+        if (input.amount) updates.amount = Math.round(input.amount * 100);
+        if (input.dueDate) updates.dueDate = input.dueDate;
+        if (input.status) updates.status = input.status;
+        if (input.categoryId) updates.categoryId = input.categoryId;
+        if (input.clientId) updates.clientId = input.clientId;
+        if (input.supplierId) updates.supplierId = input.supplierId;
+        if (input.notes !== undefined) updates.notes = input.notes;
+        return updateAccount(input.id, updates);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return deleteAccount(input.id);
       }),
   }),
 });

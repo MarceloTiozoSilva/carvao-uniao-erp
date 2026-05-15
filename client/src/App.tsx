@@ -10,6 +10,9 @@ import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
 import Clients from "./pages/Clients";
 import Products from "./pages/Products";
+import Suppliers from "./pages/Suppliers";
+import Stock from "./pages/Stock";
+import Accounts from "./pages/Accounts";
 
 function Router() {
   return (
@@ -20,6 +23,9 @@ function Router() {
       <Route path={"/relatorios"} component={Reports} />
       <Route path={"/clientes"} component={Clients} />
       <Route path={"/produtos"} component={Products} />
+      <Route path={"/fornecedores"} component={Suppliers} />
+      <Route path={"/estoque"} component={Stock} />
+      <Route path={"/contas"} component={Accounts} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -29,7 +35,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
           <Router />

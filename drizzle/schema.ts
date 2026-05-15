@@ -98,3 +98,55 @@ export const products = mysqlTable("products", {
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
+
+export const suppliers = mysqlTable("suppliers", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  cnpjCpf: varchar("cnpjCpf", { length: 20 }),
+  phone: varchar("phone", { length: 20 }),
+  email: varchar("email", { length: 320 }),
+  product: varchar("product", { length: 255 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Supplier = typeof suppliers.$inferSelect;
+export type InsertSupplier = typeof suppliers.$inferInsert;
+
+export const stockMovements = mysqlTable("stock_movements", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  date: timestamp("date").notNull(),
+  type: mysqlEnum("type", ["entrada", "saida"]).notNull(),
+  productId: int("productId").notNull().references(() => products.id),
+  quantityTonnes: decimal("quantityTonnes", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: int("unitPrice").notNull(), // Store in cents
+  supplierId: int("supplierId").references(() => suppliers.id),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StockMovement = typeof stockMovements.$inferSelect;
+export type InsertStockMovement = typeof stockMovements.$inferInsert;
+
+export const accounts = mysqlTable("accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  description: varchar("description", { length: 255 }).notNull(),
+  type: mysqlEnum("type", ["pagar", "receber"]).notNull(),
+  amount: int("amount").notNull(), // Store in cents
+  dueDate: timestamp("dueDate").notNull(),
+  status: mysqlEnum("status", ["pendente", "pago", "vencido"]).default("pendente").notNull(),
+  categoryId: int("categoryId").references(() => expenseCategories.id),
+  clientId: int("clientId").references(() => clients.id),
+  supplierId: int("supplierId").references(() => suppliers.id),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Account = typeof accounts.$inferSelect;
+export type InsertAccount = typeof accounts.$inferInsert;

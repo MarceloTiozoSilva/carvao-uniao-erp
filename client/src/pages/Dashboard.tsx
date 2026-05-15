@@ -34,6 +34,9 @@ export default function Dashboard() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [balance, setBalance] = useState(0);
+  const [overdueAccounts, setOverdueAccounts] = useState(0);
+  const [upcomingAccounts, setUpcomingAccounts] = useState(0);
+  const [totalStock, setTotalStock] = useState(0);
 
   const startDate = useMemo(() => subMonths(new Date(), 11), []);
   const endDate = useMemo(() => new Date(), []);
@@ -48,6 +51,9 @@ export default function Dashboard() {
     endDate,
   });
 
+  const { data: accountsData, isLoading: accountsLoading } = trpc.accounts.list.useQuery();
+  const { data: stockData, isLoading: stockLoading } = trpc.stockMovements.list.useQuery();
+
   const { data: categoriesData, isLoading: categoriesLoading } = trpc.categories.list.useQuery();
 
   useEffect(() => {
@@ -60,6 +66,31 @@ export default function Dashboard() {
     }
 
     try {
+      if (accountsData) {
+        const now = new Date();
+        const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        let overdue = 0;
+        let upcoming = 0;
+        accountsData.forEach((account: any) => {
+          if (account.status !== "pago") {
+            const dueDate = new Date(account.dueDate);
+            if (dueDate < now) {
+              overdue++;
+            } else if (dueDate <= sevenDaysFromNow) {
+              upcoming++;
+            }
+          }
+        });
+        setOverdueAccounts(overdue);
+        setUpcomingAccounts(upcoming);
+      }
+      if (stockData) {
+        const totalTonnes = stockData.reduce((acc: number, movement: any) => {
+          const quantity = typeof movement.quantityTonnes === 'string' ? parseFloat(movement.quantityTonnes) : movement.quantityTonnes;
+          return movement.type === "entrada" ? acc + quantity : acc - quantity;
+        }, 0);
+        setTotalStock(totalTonnes);
+      }
       const months: { [key: string]: { sales: number; expenses: number } } = {};
       
       for (let i = 11; i >= 0; i--) {
@@ -116,9 +147,9 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Erro ao processar dados do dashboard:", error);
     }
-  }, [salesData, expensesData, categoriesData, salesLoading, expensesLoading, categoriesLoading]);
+  }, [salesData, expensesData, categoriesData, accountsData, stockData, salesLoading, expensesLoading, categoriesLoading, accountsLoading, stockLoading]);
 
-  const isLoading = salesLoading || expensesLoading || categoriesLoading;
+  const isLoading = salesLoading || expensesLoading || categoriesLoading || accountsLoading || stockLoading;
 
   if (isLoading) {
     return (
@@ -175,6 +206,44 @@ export default function Dashboard() {
                 R$ {balance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </div>
               <p className="text-xs text-muted-foreground mt-1">Receita - Despesa</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-l-4 border-l-red-500">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Contas Vencidas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {overdueAccounts}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Pendentes de pagamento</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-yellow-500">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Vencimento Próximo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">
+                {upcomingAccounts}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Próximos 7 dias</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-blue-500">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Estoque Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {totalStock.toFixed(2)} ton
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Toneladas em estoque</p>
             </CardContent>
           </Card>
         </div>

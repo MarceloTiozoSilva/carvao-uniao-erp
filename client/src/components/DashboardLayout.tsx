@@ -21,19 +21,22 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingCart, CreditCard, BarChart3, Users2, Package } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, ShoppingCart, CreditCard, BarChart3, Users2, Package, Truck, Box, FileText } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: ShoppingCart, label: "Vendas", path: "/vendas" },
-  { icon: CreditCard, label: "Despesas", path: "/despesas" },
-  { icon: BarChart3, label: "Relatórios", path: "/relatorios" },
-  { icon: Users2, label: "Clientes", path: "/clientes" },
-  { icon: Package, label: "Produtos", path: "/produtos" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/", group: "main" },
+  { icon: ShoppingCart, label: "Vendas", path: "/vendas", group: "main" },
+  { icon: CreditCard, label: "Despesas", path: "/despesas", group: "main" },
+  { icon: BarChart3, label: "Relatórios", path: "/relatorios", group: "main" },
+  { icon: FileText, label: "Contas", path: "/contas", group: "main" },
+  { icon: Box, label: "Estoque", path: "/estoque", group: "main" },
+  { icon: Users2, label: "Clientes", path: "/clientes", group: "cadastros" },
+  { icon: Package, label: "Produtos", path: "/produtos", group: "cadastros" },
+  { icon: Truck, label: "Fornecedores", path: "/fornecedores", group: "cadastros" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -184,7 +187,7 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
+              {menuItems.filter(item => item.group === "main").map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
@@ -203,6 +206,33 @@ function DashboardLayoutContent({
                 );
               })}
             </SidebarMenu>
+            
+            <div className="px-3 py-4 mt-2">
+              <div className="h-px bg-border/30 mb-3"></div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+                Cadastros
+              </p>
+              <SidebarMenu className="px-0">
+                {menuItems.filter(item => item.group === "cadastros").map(item => {
+                  const isActive = location === item.path;
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setLocation(item.path)}
+                        tooltip={item.label}
+                        className={`h-10 transition-all font-normal`}
+                      >
+                        <item.icon
+                          className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                        />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </div>
           </SidebarContent>
 
           <SidebarFooter className="p-3">
