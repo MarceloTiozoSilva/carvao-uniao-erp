@@ -169,7 +169,6 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Bem-vindo, {user?.name}! Aqui está um resumo do seu negócio.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
