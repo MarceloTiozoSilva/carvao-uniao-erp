@@ -213,48 +213,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Despesas por Categoria</CardTitle>
-              <CardDescription>Distribuição dos gastos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {categoryData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={350}>
-                  <PieChart margin={{ top: 20, right: 200, bottom: 20, left: 20 }}>
-                    <Pie
-                      data={categoryData}
-                      cx="30%"
-                      cy="50%"
-                      labelLine={true}
-                      label={({ name, value }) => `${name}: R$ ${(value / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      isAnimationActive={true}
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "var(--card)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "var(--radius)",
-                      }}
-                      labelStyle={{ color: "var(--foreground)" }}
-                      formatter={(value: any) => `R$ ${value.toFixed(2)}`}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  Nenhuma despesa registrada
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Gráfico em pizza removido temporariamente para correção */}
         </div>
       </div>
     </DashboardLayout>
