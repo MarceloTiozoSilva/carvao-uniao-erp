@@ -35,26 +35,26 @@
 - [x] Visualização de todas as entradas (vendas)
 - [x] Visualização de todas as saídas (despesas)
 - [x] Cálculo de saldo acumulado
-- [ ] Filtros por período (mês, trimestre, ano)
-- [ ] Exportação de dados
+- [x] Filtros por período (mês, trimestre, ano)
+- [x] Exportação de dados
 
 ### Relatório de Despesas por Categoria
 - [x] Análise de gastos por tipo
 - [x] Gráfico de distribuição de despesas
 - [x] Tabela com totais por categoria
-- [ ] Filtros por período
+- [x] Filtros por período
 
 ### Relatório de Vendas
 - [x] Histórico completo de vendas
-- [ ] Análise de desempenho comercial
-- [ ] Gráficos de tendência
-- [ ] Filtros por período e cliente
+- [x] Análise de desempenho comercial
+- [x] Gráficos de tendência
+- [x] Filtros por período e cliente
 
 ### Geração de Relatórios em PDF
-- [ ] Geração de fluxo de caixa em PDF
-- [ ] Geração de DRE (Demonstrativo de Resultados) em PDF
-- [ ] Armazenamento de relatórios
-- [ ] Download de relatórios
+- [x] Geração de fluxo de caixa em PDF
+- [x] Geração de DRE (Demonstrativo de Resultados) em PDF
+- [x] Armazenamento de relatórios
+- [x] Download de relatórios
 
 ### Design e UX
 - [x] Estilo elegante e refinado
@@ -67,8 +67,21 @@
 - [x] Tabela de vendas
 - [x] Tabela de despesas
 - [x] Tabela de categorias de despesas
-- [ ] Tabela de clientes (opcional)
+- [x] Tabela de clientes
+- [x] Tabela de produtos
+
+## Funcionalidades Adicionais
+- [x] Cadastro de clientes com dados completos
+- [x] Cadastro de produtos com descrição e valor
+- [x] Edição de despesas
+- [x] Edição de vendas
+- [x] Filtros avançados em relatórios
+- [x] Exportação de relatórios em PDF (Fluxo de Caixa e DRE)
 
 ## Testes
 - [x] Testes unitários para cálculos financeiros
-- [ ] Testes de validação de formulários
+- [x] Testes de CRUD de clientes
+- [x] Testes de CRUD de produtos
+- [x] Testes de edição de despesas e vendas
+- [x] Testes de validação de dados
+- [x] Testes de geração de PDFs

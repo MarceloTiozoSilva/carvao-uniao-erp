@@ -4,9 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { trpc } from "@/lib/trpc";
-import { format, subMonths } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, startOfQuarter, endOfQuarter } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Loader2, Download } from "lucide-react";
 
@@ -20,9 +23,26 @@ const COLORS = [
 
 export default function Reports() {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [filterPeriod, setFilterPeriod] = useState("month");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const startDate = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
-  const endDate = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0);
+  const getDateRange = () => {
+    const now = new Date();
+    switch (filterPeriod) {
+      case "month":
+        return { start: startOfMonth(selectedMonth), end: endOfMonth(selectedMonth) };
+      case "quarter":
+        return { start: startOfQuarter(now), end: endOfQuarter(now) };
+      case "year":
+        return { start: startOfYear(now), end: endOfYear(now) };
+      case "last3months":
+        return { start: startOfMonth(subMonths(now, 3)), end: endOfMonth(now) };
+      default:
+        return { start: startOfMonth(selectedMonth), end: endOfMonth(selectedMonth) };
+    }
+  };
+
+  const { start: startDate, end: endDate } = getDateRange();
 
   const { data: salesData, isLoading: salesLoading } = trpc.sales.list.useQuery({
     startDate,
@@ -37,10 +57,23 @@ export default function Reports() {
   const { data: categoriesData } = trpc.categories.list.useQuery();
 
   const calculateTotals = () => {
-    const totalSales = salesData?.reduce((sum: number, sale: any) => sum + sale.total / 100, 0) || 0;
-    const totalExpenses = expensesData?.reduce((sum: number, expense: any) => sum + expense.expenses.amount / 100, 0) || 0;
-    const balance = totalSales - totalExpenses;
+    let totalSales = 0;
+    let totalExpenses = 0;
 
+    if (salesData) {
+      totalSales = salesData.reduce((sum: number, sale: any) => sum + sale.total / 100, 0);
+    }
+
+    if (expensesData) {
+      totalExpenses = expensesData.reduce((sum: number, expense: any) => {
+        if (selectedCategory === "all" || expense.categoryId === parseInt(selectedCategory)) {
+          return sum + expense.amount / 100;
+        }
+        return sum;
+      }, 0);
+    }
+
+    const balance = totalSales - totalExpenses;
     return { totalSales, totalExpenses, balance };
   };
 
@@ -50,8 +83,8 @@ export default function Reports() {
     const categoryTotals: { [key: number]: number } = {};
     
     expensesData.forEach((expense: any) => {
-      const categoryId = expense.expenses.categoryId;
-      categoryTotals[categoryId] = (categoryTotals[categoryId] || 0) + expense.expenses.amount / 100;
+      const categoryId = expense.categoryId;
+      categoryTotals[categoryId] = (categoryTotals[categoryId] || 0) + expense.amount / 100;
     });
 
     return Object.entries(categoryTotals).map(([categoryId, total]) => {
@@ -75,10 +108,10 @@ export default function Reports() {
         amount: s.total / 100,
       })) || []),
       ...(expensesData?.map((e: any) => ({
-        date: e.expenses.date,
+        date: e.date,
         type: "saida",
-        description: `Despesa - ${e.expenses.description}`,
-        amount: -(e.expenses.amount / 100),
+        description: `Despesa - ${e.description}`,
+        amount: -(e.amount / 100),
       })) || []),
     ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -98,82 +131,130 @@ export default function Reports() {
   const cashFlow = getCashFlow();
 
   const handleDownloadPDF = () => {
-    // Placeholder for PDF generation
-    alert("Funcionalidade de download de PDF será implementada em breve!");
+    // TODO: Implementar exportação em PDF
+    alert("Funcionalidade de download em PDF será implementada em breve!");
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Relatórios Financeiros</h1>
-            <p className="text-muted-foreground mt-1">Análise detalhada do desempenho financeiro</p>
-          </div>
-          <Button onClick={handleDownloadPDF} className="gap-2">
-            <Download className="w-4 h-4" />
-            Gerar PDF
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
+          <p className="text-muted-foreground mt-1">Análise financeira e fluxo de caixa</p>
         </div>
 
-        <Tabs defaultValue="resumo" className="space-y-4">
+        {/* Filtros Avançados */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Filtros</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="period">Período</Label>
+                <Select value={filterPeriod} onValueChange={setFilterPeriod}>
+                  <SelectTrigger id="period">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="month">Mês</SelectItem>
+                    <SelectItem value="quarter">Trimestre</SelectItem>
+                    <SelectItem value="year">Ano</SelectItem>
+                    <SelectItem value="last3months">Últimos 3 Meses</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {filterPeriod === "month" && (
+                <div>
+                  <Label htmlFor="month">Mês/Ano</Label>
+                  <Input
+                    id="month"
+                    type="month"
+                    value={format(selectedMonth, "yyyy-MM")}
+                    onChange={(e) => {
+                      const [year, month] = e.target.value.split("-");
+                      setSelectedMonth(new Date(parseInt(year), parseInt(month) - 1));
+                    }}
+                  />
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="category">Categoria de Despesa</Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger id="category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {categoriesData?.map((category: any) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* KPIs */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Vendas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                R$ {totalSales.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Despesas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">
+                R$ {totalExpenses.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Saldo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${balance >= 0 ? "text-green-600" : "text-destructive"}`}>
+                R$ {balance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Abas de Relatórios */}
+        <Tabs defaultValue="cashflow" className="w-full">
           <TabsList>
-            <TabsTrigger value="resumo">Resumo</TabsTrigger>
-            <TabsTrigger value="fluxo">Fluxo de Caixa</TabsTrigger>
-            <TabsTrigger value="categorias">Despesas por Categoria</TabsTrigger>
-            <TabsTrigger value="vendas">Vendas</TabsTrigger>
+            <TabsTrigger value="cashflow">Fluxo de Caixa</TabsTrigger>
+            <TabsTrigger value="expenses">Despesas por Categoria</TabsTrigger>
+            <TabsTrigger value="sales">Vendas</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="resumo" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total de Vendas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-foreground">
-                    R$ {totalSales.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{format(selectedMonth, "MMMM/yyyy", { locale: ptBR })}</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total de Despesas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-foreground">
-                    R$ {totalExpenses.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{format(selectedMonth, "MMMM/yyyy", { locale: ptBR })}</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Resultado</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-2xl font-bold ${balance >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    R$ {balance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{balance >= 0 ? "Lucro" : "Prejuízo"}</p>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="fluxo" className="space-y-4">
+          {/* Fluxo de Caixa */}
+          <TabsContent value="cashflow" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Fluxo de Caixa</CardTitle>
-                <CardDescription>Todas as entradas e saídas com saldo acumulado</CardDescription>
+                <CardDescription>Entradas e saídas acumuladas</CardDescription>
               </CardHeader>
               <CardContent>
                 {expensesLoading || salesLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : cashFlow.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -184,7 +265,7 @@ export default function Reports() {
                           <TableHead>Descrição</TableHead>
                           <TableHead>Tipo</TableHead>
                           <TableHead className="text-right">Valor</TableHead>
-                          <TableHead className="text-right">Saldo Acumulado</TableHead>
+                          <TableHead className="text-right">Saldo</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -193,15 +274,11 @@ export default function Reports() {
                             <TableCell>{format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                             <TableCell>{transaction.description}</TableCell>
                             <TableCell>
-                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                transaction.type === "entrada" 
-                                  ? "bg-green-100 text-green-700" 
-                                  : "bg-red-100 text-red-700"
-                              }`}>
+                              <span className={transaction.type === "entrada" ? "text-green-600" : "text-destructive"}>
                                 {transaction.type === "entrada" ? "Entrada" : "Saída"}
                               </span>
                             </TableCell>
-                            <TableCell className="text-right font-semibold">
+                            <TableCell className="text-right font-medium">
                               R$ {Math.abs(transaction.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </TableCell>
                             <TableCell className="text-right font-bold">
@@ -213,83 +290,57 @@ export default function Reports() {
                     </Table>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center py-8 text-muted-foreground">
-                    Nenhuma transação neste período
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhuma transação no período selecionado
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="categorias" className="space-y-4">
+          {/* Despesas por Categoria */}
+          <TabsContent value="expenses" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Despesas por Categoria</CardTitle>
-                <CardDescription>Distribuição dos gastos por tipo</CardDescription>
+                <CardDescription>Distribuição de gastos</CardDescription>
               </CardHeader>
               <CardContent>
                 {expensesLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : expensesByCategory.length > 0 ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={expensesByCategory}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, value }) => `${name}: R$ ${value.toFixed(2)}`}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {expensesByCategory.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value: any) => `R$ ${value.toFixed(2)}`} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Categoria</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                            <TableHead className="text-right">%</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {expensesByCategory.map((category: any, index: number) => (
-                            <TableRow key={index}>
-                              <TableCell>{category.name}</TableCell>
-                              <TableCell className="text-right font-semibold">
-                                R$ {category.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {((category.value / totalExpenses) * 100).toFixed(1)}%
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={expensesByCategory}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value }) => `${name}: R$ ${value.toFixed(2)}`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {expensesByCategory.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: any) => `R$ ${typeof value === 'number' ? value.toFixed(2) : value}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center py-8 text-muted-foreground">
-                    Nenhuma despesa registrada neste período
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhuma despesa no período selecionado
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="vendas" className="space-y-4">
+          {/* Vendas */}
+          <TabsContent value="sales" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Histórico de Vendas</CardTitle>
@@ -298,7 +349,7 @@ export default function Reports() {
               <CardContent>
                 {salesLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : salesData && salesData.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -308,8 +359,8 @@ export default function Reports() {
                           <TableHead>Data</TableHead>
                           <TableHead>Cliente</TableHead>
                           <TableHead>Produto</TableHead>
-                          <TableHead className="text-right">Quantidade</TableHead>
-                          <TableHead className="text-right">Valor Unitário</TableHead>
+                          <TableHead className="text-right">Qtd</TableHead>
+                          <TableHead className="text-right">Valor Unit.</TableHead>
                           <TableHead className="text-right">Total</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -323,7 +374,7 @@ export default function Reports() {
                             <TableCell className="text-right">
                               R$ {(sale.unitPrice / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </TableCell>
-                            <TableCell className="text-right font-semibold">
+                            <TableCell className="text-right font-medium">
                               R$ {(sale.total / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </TableCell>
                           </TableRow>
@@ -332,14 +383,20 @@ export default function Reports() {
                     </Table>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center py-8 text-muted-foreground">
-                    Nenhuma venda registrada neste período
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhuma venda no período selecionado
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Botão de Download */}
+        <Button onClick={handleDownloadPDF} className="gap-2" disabled>
+          <Download className="h-4 w-4" />
+          Exportar em PDF (Em desenvolvimento)
+        </Button>
       </div>
     </DashboardLayout>
   );

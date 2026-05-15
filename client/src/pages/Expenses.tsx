@@ -10,16 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Expenses() {
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     description: "",
     categoryId: "",
     amount: 0,
+    notes: "",
   });
 
   const utils = trpc.useUtils();
@@ -29,17 +31,22 @@ export default function Expenses() {
   const createMutation = trpc.expenses.create.useMutation({
     onSuccess: () => {
       toast.success("Despesa registrada com sucesso!");
-      setFormData({
-        date: new Date().toISOString().split("T")[0],
-        description: "",
-        categoryId: "",
-        amount: 0,
-      });
-      setOpen(false);
+      resetForm();
       utils.expenses.list.invalidate();
     },
     onError: (error) => {
       toast.error("Erro ao registrar despesa: " + error.message);
+    },
+  });
+
+  const updateMutation = trpc.expenses.update.useMutation({
+    onSuccess: () => {
+      toast.success("Despesa atualizada com sucesso!");
+      resetForm();
+      utils.expenses.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Erro ao atualizar despesa: " + error.message);
     },
   });
 
@@ -53,6 +60,30 @@ export default function Expenses() {
     },
   });
 
+  const resetForm = () => {
+    setFormData({
+      date: new Date().toISOString().split("T")[0],
+      description: "",
+      categoryId: "",
+      amount: 0,
+      notes: "",
+    });
+    setEditingId(null);
+    setOpen(false);
+  };
+
+  const handleEdit = (expense: any) => {
+    setFormData({
+      date: format(new Date(expense.date), "yyyy-MM-dd"),
+      description: expense.description,
+      categoryId: expense.categoryId.toString(),
+      amount: expense.amount / 100,
+      notes: expense.notes || "",
+    });
+    setEditingId(expense.id);
+    setOpen(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -61,12 +92,24 @@ export default function Expenses() {
       return;
     }
 
-    createMutation.mutate({
-      date: new Date(formData.date),
-      description: formData.description,
-      categoryId: parseInt(formData.categoryId),
-      amount: formData.amount,
-    });
+    if (editingId) {
+      updateMutation.mutate({
+        id: editingId,
+        date: new Date(formData.date),
+        description: formData.description,
+        categoryId: parseInt(formData.categoryId),
+        amount: formData.amount,
+        notes: formData.notes || undefined,
+      });
+    } else {
+      createMutation.mutate({
+        date: new Date(formData.date),
+        description: formData.description,
+        categoryId: parseInt(formData.categoryId),
+        amount: formData.amount,
+        notes: formData.notes || undefined,
+      });
+    }
   };
 
   const handleDelete = (id: number) => {
@@ -75,90 +118,101 @@ export default function Expenses() {
     }
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm();
+    }
+    setOpen(newOpen);
+  };
+
+  const getCategoryName = (categoryId: number) => {
+    return categories?.find((c: any) => c.id === categoryId)?.name || "Desconhecida";
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Controle de Despesas</h1>
-            <p className="text-muted-foreground mt-1">Registre e acompanhe todas as despesas da empresa</p>
+            <h1 className="text-3xl font-bold text-foreground">Despesas</h1>
+            <p className="text-muted-foreground mt-1">Registre e acompanhe as despesas da empresa</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
               <Button className="gap-2">
-                <Plus className="w-4 h-4" />
+                <Plus className="h-4 w-4" />
                 Nova Despesa
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Registrar Nova Despesa</DialogTitle>
-                <DialogDescription>Preencha os dados da despesa abaixo</DialogDescription>
+                <DialogTitle>{editingId ? "Editar Despesa" : "Nova Despesa"}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Data</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Categoria</Label>
-                    <Select value={formData.categoryId} onValueChange={(value) => setFormData({ ...formData, categoryId: value })}>
-                      <SelectTrigger id="category">
-                        <SelectValue placeholder="Selecione uma categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories?.map((category: any) => (
-                          <SelectItem key={category.id} value={category.id.toString()}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label htmlFor="date">Data</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                  />
                 </div>
-
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="description">Descrição</Label>
                   <Input
                     id="description"
-                    placeholder="Ex: Combustível para frota"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Descrição da despesa"
+                    required
                   />
                 </div>
-
-                <div className="space-y-2">
+                <div>
+                  <Label htmlFor="category">Categoria</Label>
+                  <Select value={formData.categoryId} onValueChange={(value) => setFormData({ ...formData, categoryId: value })}>
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories?.map((category: any) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label htmlFor="amount">Valor (R$)</Label>
                   <Input
                     id="amount"
                     type="number"
                     step="0.01"
-                    min="0"
-                    placeholder="0,00"
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                    placeholder="0.00"
+                    required
                   />
                 </div>
-
-                <div className="bg-muted p-3 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Valor da Despesa</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    R$ {formData.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </p>
+                <div>
+                  <Label htmlFor="notes">Observações</Label>
+                  <Input
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Observações (opcional)"
+                  />
                 </div>
-
-                <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? (
+                <Button type="submit" className="w-full" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {createMutation.isPending || updateMutation.isPending ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Registrando...
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
                     </>
+                  ) : editingId ? (
+                    "Atualizar Despesa"
                   ) : (
                     "Registrar Despesa"
                   )}
@@ -174,9 +228,9 @@ export default function Expenses() {
             <CardDescription>Todas as despesas registradas</CardDescription>
           </CardHeader>
           <CardContent>
-            {expensesLoading || categoriesLoading ? (
+            {expensesLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : expenses && expenses.length > 0 ? (
               <div className="overflow-x-auto">
@@ -192,22 +246,30 @@ export default function Expenses() {
                   </TableHeader>
                   <TableBody>
                     {expenses.map((expense: any) => (
-                      <TableRow key={expense.expenses.id}>
-                        <TableCell>{format(new Date(expense.expenses.date), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
-                        <TableCell>{expense.expenses.description}</TableCell>
-                        <TableCell>{expense.expense_categories?.name || "Sem categoria"}</TableCell>
-                        <TableCell className="text-right font-semibold">
-                          R$ {(expense.expenses.amount / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      <TableRow key={expense.id}>
+                        <TableCell>{format(new Date(expense.date), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                        <TableCell>{expense.description}</TableCell>
+                        <TableCell>{getCategoryName(expense.categoryId)}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          R$ {(expense.amount / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(expense.expenses.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(expense)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(expense.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -215,8 +277,8 @@ export default function Expenses() {
                 </Table>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                Nenhuma despesa registrada ainda
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhuma despesa registrada. Clique em "Nova Despesa" para começar.
               </div>
             )}
           </CardContent>

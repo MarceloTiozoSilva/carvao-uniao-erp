@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, sales, InsertSale, expenses, InsertExpense, expenseCategories } from "../drizzle/schema";
+import { InsertUser, users, sales, InsertSale, expenses, InsertExpense, expenseCategories, clients, InsertClient, products, InsertProduct } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -166,4 +166,54 @@ export async function deleteExpense(id: number) {
   if (!db) throw new Error("Database not available");
   const { expenses: expensesTable } = await import("../drizzle/schema");
   return db.delete(expensesTable).where(eq(expensesTable.id, id));
+}
+
+// Clients
+export async function getClientsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(clients).where(eq(clients.userId, userId)).orderBy(sql`${clients.name} ASC`);
+}
+
+export async function createClient(client: InsertClient) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(clients).values(client);
+}
+
+export async function updateClient(id: number, updates: Partial<InsertClient>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(clients).set(updates).where(eq(clients.id, id));
+}
+
+export async function deleteClient(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(clients).where(eq(clients.id, id));
+}
+
+// Products
+export async function getProductsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(products).where(eq(products.userId, userId)).orderBy(sql`${products.name} ASC`);
+}
+
+export async function createProduct(product: InsertProduct) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(products).values(product);
+}
+
+export async function updateProduct(id: number, updates: Partial<InsertProduct>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(products).set(updates).where(eq(products.id, id));
+}
+
+export async function deleteProduct(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(products).where(eq(products.id, id));
 }
