@@ -25,8 +25,8 @@ export default function Expenses() {
   });
 
   const utils = trpc.useUtils();
-  const { data: expenses, isLoading: expensesLoading } = trpc.expenses.list.useQuery({});
-  const { data: categories, isLoading: categoriesLoading } = trpc.categories.list.useQuery();
+  const { data: expenses, isLoading: expensesLoading } = trpc.expenses.list.useQuery({} as any);
+  const { data: categories, isLoading: categoriesLoading } = trpc.categories.list.useQuery(undefined as any);
 
   const createMutation = trpc.expenses.create.useMutation({
     onSuccess: () => {
@@ -73,15 +73,24 @@ export default function Expenses() {
   };
 
   const handleEdit = (expense: any) => {
-    setFormData({
-      date: format(new Date(expense.date), "yyyy-MM-dd"),
-      description: expense.description,
-      categoryId: expense.categoryId.toString(),
-      amount: expense.amount / 100,
-      notes: expense.notes || "",
-    });
-    setEditingId(expense.id);
-    setOpen(true);
+    try {
+      const expenseDate = new Date(expense.date);
+      if (isNaN(expenseDate.getTime())) {
+        toast.error("Data inválida ao editar despesa");
+        return;
+      }
+      setFormData({
+        date: format(expenseDate, "yyyy-MM-dd"),
+        description: expense.description,
+        categoryId: expense.categoryId.toString(),
+        amount: expense.amount / 100,
+        notes: expense.notes || "",
+      });
+      setEditingId(expense.id);
+      setOpen(true);
+    } catch (error) {
+      toast.error("Erro ao editar despesa");
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
