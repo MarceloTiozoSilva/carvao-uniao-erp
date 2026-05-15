@@ -76,9 +76,9 @@ export default function Dashboard() {
       });
 
       expensesData.forEach((expense: any) => {
-        const monthKey = format(new Date(expense.expenses.date), "MMM/yy", { locale: ptBR });
+        const monthKey = format(new Date(expense.date), "MMM/yy", { locale: ptBR });
         if (months[monthKey]) {
-          months[monthKey].expenses += expense.expenses.amount / 100;
+          months[monthKey].expenses += expense.amount / 100;
         }
       });
 
@@ -89,7 +89,7 @@ export default function Dashboard() {
       })));
 
       const revenue = salesData.reduce((sum: number, sale: any) => sum + sale.total / 100, 0);
-      const expenses = expensesData.reduce((sum: number, expense: any) => sum + expense.expenses.amount / 100, 0);
+      const expenses = expensesData.reduce((sum: number, expense: any) => sum + expense.amount / 100, 0);
       
       setTotalRevenue(Math.round(revenue * 100) / 100);
       setTotalExpenses(Math.round(expenses * 100) / 100);
@@ -99,8 +99,8 @@ export default function Dashboard() {
         const categoryTotals: { [key: number]: number } = {};
         
         expensesData.forEach((expense: any) => {
-          const categoryId = expense.expenses.categoryId;
-          categoryTotals[categoryId] = (categoryTotals[categoryId] || 0) + expense.expenses.amount / 100;
+          const categoryId = expense.categoryId;
+          categoryTotals[categoryId] = (categoryTotals[categoryId] || 0) + expense.amount / 100;
         });
 
         const categoryDataFormatted = Object.entries(categoryTotals).map(([categoryId, total]) => {
@@ -213,7 +213,56 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Gráfico em pizza removido temporariamente para correção */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Despesas por Categoria</CardTitle>
+              <CardDescription>Distribuição dos gastos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {categoryData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={350}>
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="45%"
+                      cy="50%"
+                      labelLine={false}
+                      label={false}
+                      outerRadius={70}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--card)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius)",
+                      }}
+                      labelStyle={{ color: "var(--foreground)" }}
+                      formatter={(value: any) => `R$ ${(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    />
+                    <Legend 
+                      verticalAlign="middle" 
+                      align="right"
+                      layout="vertical"
+                      formatter={(value, entry) => {
+                        const data = (entry as any).payload;
+                        return `${data.name}: R$ ${(data.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  Nenhuma despesa registrada
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>

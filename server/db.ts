@@ -114,12 +114,23 @@ export async function getExpensesByUserId(userId: number, startDate?: Date, endD
     conditions.push(sql`${expenses.date} <= ${endDate}`);
   }
   
-  return db
-    .select()
+  const result = await db
+    .select({
+      id: expenses.id,
+      date: expenses.date,
+      description: expenses.description,
+      categoryId: expenses.categoryId,
+      categoryName: expenseCategories.name,
+      amount: expenses.amount,
+      notes: expenses.notes,
+      userId: expenses.userId,
+    })
     .from(expenses)
     .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
     .where(and(...conditions))
     .orderBy(sql`${expenses.date} DESC`);
+  
+  return result;
 }
 
 export async function getExpenseCategories() {

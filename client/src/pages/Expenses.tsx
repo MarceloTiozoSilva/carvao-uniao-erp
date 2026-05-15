@@ -258,7 +258,7 @@ export default function Expenses() {
                       <TableRow key={expense.id}>
                         <TableCell>{format(new Date(expense.date), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                         <TableCell>{expense.description}</TableCell>
-                        <TableCell>{getCategoryName(expense.categoryId)}</TableCell>
+                        <TableCell>{expense.categoryName || getCategoryName(expense.categoryId)}</TableCell>
                         <TableCell className="text-right font-medium">
                           R$ {(expense.amount / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </TableCell>
