@@ -162,7 +162,7 @@ export default function Clients() {
                   </thead>
                   <tbody>
                     {clients.map((client: any) => (
-                      <tr key={client.id} className="border-b hover:bg-accent/50">
+                      <tr key={client.id} className="border-b transition-colors" style={{ '--hover-bg': '#C8A96E20' } as React.CSSProperties} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#C8A96E20')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                         <td className="py-3 px-4">{client.name}</td>
                         <td className="py-3 px-4">{client.email || "-"}</td>
                         <td className="py-3 px-4">{client.phone || "-"}</td>
