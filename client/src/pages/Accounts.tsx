@@ -318,7 +318,7 @@ export default function Accounts() {
                   </thead>
                   <tbody>
                     {filteredAccounts.map((account: any) => (
-                      <tr key={account.id} className="border-b hover:bg-accent/50">
+                      <tr key={account.id} className="border-b transition-colors" style={{ '--hover-bg': '#C8A96E20' } as React.CSSProperties} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#C8A96E20')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                         <td className="py-3 px-4">{account.description}</td>
                         <td className="py-3 px-4">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${account.type === 'pagar' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>

@@ -226,7 +226,7 @@ export default function Stock() {
                   </thead>
                   <tbody>
                     {movements.map((movement: any) => (
-                      <tr key={movement.id} className="border-b hover:bg-accent/50">
+                      <tr key={movement.id} className="border-b transition-colors" style={{ '--hover-bg': '#C8A96E20' } as React.CSSProperties} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#C8A96E20')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
                         <td className="py-3 px-4">{new Date(movement.date).toLocaleDateString('pt-BR')}</td>
                         <td className="py-3 px-4">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${movement.type === 'entrada' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

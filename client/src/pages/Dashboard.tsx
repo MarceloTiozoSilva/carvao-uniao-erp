@@ -20,11 +20,11 @@ interface CategoryData {
 }
 
 const COLORS = [
-  "oklch(0.55 0.2 260)",
-  "oklch(0.65 0.15 280)",
-  "oklch(0.45 0.15 240)",
-  "oklch(0.35 0.12 200)",
-  "oklch(0.75 0.1 300)",
+  "#CC2200",
+  "#C8A96E",
+  "#E85D3F",
+  "#D4A574",
+  "#B8860B",
 ];
 
 export default function Dashboard() {
@@ -288,15 +288,15 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {categoryData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={350}>
+                <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
                     <Pie
                       data={categoryData}
-                      cx="45%"
+                      cx="35%"
                       cy="50%"
                       labelLine={false}
                       label={false}
-                      outerRadius={70}
+                      outerRadius={55}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -309,14 +309,18 @@ export default function Dashboard() {
                         backgroundColor: "var(--card)",
                         border: "1px solid var(--border)",
                         borderRadius: "var(--radius)",
+                        position: "absolute",
+                        pointerEvents: "none",
                       }}
                       labelStyle={{ color: "var(--foreground)" }}
                       formatter={(value: any) => `R$ ${(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                      position={{ x: 10, y: 10 }}
                     />
                     <Legend 
                       verticalAlign="middle" 
                       align="right"
                       layout="vertical"
+                      wrapperStyle={{ paddingLeft: "10px" }}
                       formatter={(value, entry) => {
                         const data = (entry as any).payload;
                         return `${data.name}: R$ ${(data.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;

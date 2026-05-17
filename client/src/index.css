@@ -136,39 +136,66 @@
 @layer components {
   /* Input styles with golden focus and red error states */
   input:not([type="checkbox"]):not([type="radio"]) {
-    @apply py-3 px-4 transition-colors duration-200;
+    @apply py-3 px-4 transition-all duration-200 border border-input;
   }
 
-  input:not([type="checkbox"]):not([type="radio"]):focus {
-    @apply border-[#C8A96E] ring-2 ring-[#C8A96E]/30 outline-none;
+  input:not([type="checkbox"]):not([type="radio"]):focus,
+  input:not([type="checkbox"]):not([type="radio"]):focus-visible {
+    border-color: #C8A96E !important;
+    box-shadow: 0 0 0 2px rgba(200, 169, 110, 0.3) !important;
+    outline: none !important;
   }
 
   input:not([type="checkbox"]):not([type="radio"])[aria-invalid="true"] {
     @apply border-destructive ring-2 ring-destructive/30;
   }
 
-  textarea {
-    @apply py-3 px-4 transition-colors duration-200;
+  input:not([type="checkbox"]):not([type="radio"])[aria-invalid="true"]:focus,
+  input:not([type="checkbox"]):not([type="radio"])[aria-invalid="true"]:focus-visible {
+    border-color: #CC2200 !important;
+    box-shadow: 0 0 0 2px rgba(204, 34, 0, 0.3) !important;
   }
 
-  textarea:focus {
-    @apply border-[#C8A96E] ring-2 ring-[#C8A96E]/30 outline-none;
+  textarea {
+    @apply py-3 px-4 transition-all duration-200 border border-input;
+  }
+
+  textarea:focus,
+  textarea:focus-visible {
+    border-color: #C8A96E !important;
+    box-shadow: 0 0 0 2px rgba(200, 169, 110, 0.3) !important;
+    outline: none !important;
   }
 
   textarea[aria-invalid="true"] {
     @apply border-destructive ring-2 ring-destructive/30;
   }
 
-  select {
-    @apply py-3 px-4 transition-colors duration-200;
+  textarea[aria-invalid="true"]:focus,
+  textarea[aria-invalid="true"]:focus-visible {
+    border-color: #CC2200 !important;
+    box-shadow: 0 0 0 2px rgba(204, 34, 0, 0.3) !important;
   }
 
-  select:focus {
-    @apply border-[#C8A96E] ring-2 ring-[#C8A96E]/30 outline-none;
+  select {
+    @apply py-3 px-4 transition-all duration-200 border border-input;
+  }
+
+  select:focus,
+  select:focus-visible {
+    border-color: #C8A96E !important;
+    box-shadow: 0 0 0 2px rgba(200, 169, 110, 0.3) !important;
+    outline: none !important;
   }
 
   select[aria-invalid="true"] {
     @apply border-destructive ring-2 ring-destructive/30;
+  }
+
+  select[aria-invalid="true"]:focus,
+  select[aria-invalid="true"]:focus-visible {
+    border-color: #CC2200 !important;
+    box-shadow: 0 0 0 2px rgba(204, 34, 0, 0.3) !important;
   }
 
   /* Form field spacing */
