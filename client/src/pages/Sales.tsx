@@ -150,7 +150,7 @@ export default function Sales() {
                 <DialogTitle>{editingId ? "Editar Venda" : "Registrar Nova Venda"}</DialogTitle>
                 <DialogDescription>Preencha os dados da venda abaixo</DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="date">Data</Label>

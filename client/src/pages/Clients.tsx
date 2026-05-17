@@ -90,7 +90,7 @@ export default function Clients() {
               <DialogHeader>
                 <DialogTitle>{editingId ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <Label htmlFor="name">Nome *</Label>
                   <Input

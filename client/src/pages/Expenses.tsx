@@ -157,7 +157,7 @@ export default function Expenses() {
               <DialogHeader>
                 <DialogTitle>{editingId ? "Editar Despesa" : "Nova Despesa"}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <Label htmlFor="date">Data</Label>
                   <Input

@@ -134,6 +134,48 @@
 }
 
 @layer components {
+  /* Input styles with golden focus and red error states */
+  input:not([type="checkbox"]):not([type="radio"]) {
+    @apply py-3 px-4 transition-colors duration-200;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):focus {
+    @apply border-[#C8A96E] ring-2 ring-[#C8A96E]/30 outline-none;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"])[aria-invalid="true"] {
+    @apply border-destructive ring-2 ring-destructive/30;
+  }
+
+  textarea {
+    @apply py-3 px-4 transition-colors duration-200;
+  }
+
+  textarea:focus {
+    @apply border-[#C8A96E] ring-2 ring-[#C8A96E]/30 outline-none;
+  }
+
+  textarea[aria-invalid="true"] {
+    @apply border-destructive ring-2 ring-destructive/30;
+  }
+
+  select {
+    @apply py-3 px-4 transition-colors duration-200;
+  }
+
+  select:focus {
+    @apply border-[#C8A96E] ring-2 ring-[#C8A96E]/30 outline-none;
+  }
+
+  select[aria-invalid="true"] {
+    @apply border-destructive ring-2 ring-destructive/30;
+  }
+
+  /* Form field spacing */
+  .form-field {
+    @apply mb-5;
+  }
+
   .container {
     width: 100%;
     margin-left: auto;

@@ -137,7 +137,7 @@ export default function Accounts() {
               <DialogHeader>
                 <DialogTitle>{editingId ? "Editar Conta" : "Nova Conta"}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <Label htmlFor="description">Descrição *</Label>
                   <Input
