@@ -247,8 +247,8 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
+        <div className="grid grid-cols-1 gap-6">
+          <Card>
             <CardHeader>
               <CardTitle>Vendas vs Despesas</CardTitle>
               <CardDescription>Comparação mensal dos últimos 12 meses</CardDescription>
@@ -276,61 +276,6 @@ export default function Dashboard() {
               ) : (
                 <div className="flex items-center justify-center h-[300px] text-muted-foreground">
                   Nenhum dado disponível
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Despesas por Categoria</CardTitle>
-              <CardDescription>Distribuição dos gastos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {categoryData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="35%"
-                      cy="50%"
-                      labelLine={false}
-                      label={false}
-                      outerRadius={55}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "var(--card)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "var(--radius)",
-                        position: "absolute",
-                        pointerEvents: "none",
-                      }}
-                      labelStyle={{ color: "var(--foreground)" }}
-                      formatter={(value: any) => `R$ ${(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                      position={{ x: 10, y: 10 }}
-                    />
-                    <Legend 
-                      verticalAlign="middle" 
-                      align="right"
-                      layout="vertical"
-                      wrapperStyle={{ paddingLeft: "10px" }}
-                      formatter={(value, entry) => {
-                        const data = (entry as any).payload;
-                        return `${data.name}: R$ ${(data.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  Nenhuma despesa registrada
                 </div>
               )}
             </CardContent>
