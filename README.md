@@ -37,10 +37,6 @@ Desenvolvido com Manus e tRPC, este sistema integra gestão de vendas, despesas,
 ## Como usar
 
 1. **Acesse o sistema:** https://carvaoerp-v7dldryq.manus.space
-2. **Faça login** com sua conta Manus
-3. **Navegue pelos módulos** no menu lateral
-4. **Adicione dados** usando os botões "Nova [Entidade]"
-5. **Acompanhe métricas** no Dashboard
 
 ## Desenvolvimento local
 
