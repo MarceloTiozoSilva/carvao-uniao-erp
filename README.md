@@ -1,6 +1,6 @@
 # Carvão União - Sistema de Gestão
 
-Sistema ERP completo para gestão financeira, estoque e operações comerciais da Carvão União.
+Sistema Sistema de Gestão Financeira da Carvão União.
 
 ## Sobre o projeto
 
