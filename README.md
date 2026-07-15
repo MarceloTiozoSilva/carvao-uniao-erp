@@ -1,6 +1,6 @@
 # Carvão União - Sistema de Gestão
 
-Sistema Sistema de Gestão Financeira da Carvão União.
+Sistema de Gestão Financeira da Carvão União.
 
 ## Sobre o projeto
 
